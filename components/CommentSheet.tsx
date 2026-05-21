@@ -15,6 +15,7 @@ import { useQuery } from '@tanstack/react-query'
 import { X, Heart, Send, ProBadge } from '@/components/Icons'
 import { listComments, isProUser } from '@/lib/data'
 import { colors, timeAgo, MOCK_USER_ID } from '@/constants/throttlist'
+import { router } from 'expo-router'
 import InitialsAvatar from '@/components/InitialsAvatar'
 import type { Comment } from '@/types'
 
@@ -62,7 +63,10 @@ function CommentRow({ comment, isMine, isReply, onDelete, onReport, onReply }: C
       >
         <View style={styles.commentTop}>
           <View style={styles.usernameRow}>
-            <Text style={[styles.commentUsername, isReply && styles.commentUsernameSmall]}>
+            <Text
+              style={[styles.commentUsername, isReply && styles.commentUsernameSmall]}
+              onPress={() => router.push(`/user/${comment.username}`)}
+            >
               @{comment.username}
             </Text>
             {isProUser(comment.username) && <ProBadge size={12} />}

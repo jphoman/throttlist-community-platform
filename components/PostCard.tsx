@@ -12,6 +12,7 @@ import {
 import Svg, { Path as SvgPath } from 'react-native-svg'
 import { Heart, MessageCircle, Share2, ExternalLink, X, ProBadge, Tag } from '@/components/Icons'
 import { colors, timeAgo, formatFollowers } from '@/constants/throttlist'
+import { router } from 'expo-router'
 import { isProUser, getPostComments } from '@/lib/data'
 import type { Comment } from '@/types'
 import InitialsAvatar from '@/components/InitialsAvatar'
@@ -255,7 +256,7 @@ export default function PostCard({
           return (
             <View key={c.id} style={styles.commentRow}>
               <Text style={styles.commentText}>
-                <Text style={styles.metaUsername}>{c.username} </Text>
+                <Text style={styles.metaUsername} onPress={() => router.push(`/user/${c.username}`)}>{c.username} </Text>
                 {c.body}
               </Text>
               <Pressable onPress={() => toggleCommentLike(c.id)} hitSlop={8}>
