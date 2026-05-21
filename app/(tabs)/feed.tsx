@@ -238,7 +238,7 @@ export default function FeedScreen() {
           </Pressable>
 
           <Pressable
-            style={[styles.sortPill, styles.typePill, isTypeFiltered && styles.sortPillActive]}
+            style={[styles.sortPill, isTypeFiltered && styles.sortPillActive]}
             onPress={() => setTypePickerOpen(true)}
           >
             <Text style={[styles.sortPillText, isTypeFiltered && styles.sortPillTextActive]}>
