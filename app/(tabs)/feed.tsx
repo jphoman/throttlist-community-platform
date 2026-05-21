@@ -22,7 +22,7 @@ import PostCard from '@/components/PostCard'
 import PartDetailSheet from '@/components/PartDetailSheet'
 import type { Post, Part } from '@/types'
 
-const HEADER_HEIGHT = Platform.OS === 'ios' ? 68 : 56
+const HEADER_HEIGHT = Platform.OS === 'ios' ? 62 : 50
 const SORT_HEADER_HEIGHT = 36
 const COMBINED_HEADER_HEIGHT = HEADER_HEIGHT + SORT_HEADER_HEIGHT
 
