@@ -710,6 +710,18 @@ export async function listComments(where?: {
   return comments
 }
 
+export function getTopPostComments(postId: string, limit = 3): Comment[] {
+  return [...MOCK_COMMENTS, ..._localBuildComments]
+    .filter(c => c.targetId === postId && !c.parentId)
+    .sort((a, b) => b.likes - a.likes)
+    .slice(0, limit)
+}
+
+export function getPostComments(postId: string): Comment[] {
+  return [...MOCK_COMMENTS, ..._localBuildComments]
+    .filter(c => c.targetId === postId && !c.parentId)
+}
+
 export async function addComment(targetId: string, body: string, parentId?: string): Promise<Comment> {
   const user = MOCK_USERS.find(u => u.id === 'user_cappuccino')
   const comment: Comment = {
@@ -813,7 +825,7 @@ export function getTopBuilds(limit = 10, excludeUserId?: string): Build[] {
         .map(id => buildMap[id])
         .filter(Boolean)
         .filter(b => b.userId !== excludeUserId)
-        .map(b => ({ ...b, username: userMap[b.userId]?.username, ownerIsPro: parseInt(userMap[b.userId]?.proTier as string) >= 1 }))
+        .map(b => ({ ...b, username: userMap[b.userId]?.username, avatarUrl: userMap[b.userId]?.avatarUrl, ownerIsPro: parseInt(userMap[b.userId]?.proTier as string) >= 1 }))
     }
   }
   let builds = MOCK_BUILDS.filter(b => b.status === 'active')
@@ -821,7 +833,7 @@ export function getTopBuilds(limit = 10, excludeUserId?: string): Build[] {
   return [...builds]
     .sort((a, b) => b.followerCount - a.followerCount)
     .slice(0, limit)
-    .map(b => ({ ...b, username: userMap[b.userId]?.username, ownerIsPro: parseInt(userMap[b.userId]?.proTier as string) >= 1 }))
+    .map(b => ({ ...b, username: userMap[b.userId]?.username, avatarUrl: userMap[b.userId]?.avatarUrl, ownerIsPro: parseInt(userMap[b.userId]?.proTier as string) >= 1 }))
 }
 
 // ─── Horsepower Score ─────────────────────────────────────────────────────────
