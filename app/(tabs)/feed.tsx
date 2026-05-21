@@ -9,12 +9,14 @@ import {
   RefreshControl,
   Modal,
   TouchableWithoutFeedback,
+  TextInput,
+  ScrollView,
 } from 'react-native'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { router } from 'expo-router'
 import { Bell, Compass, ChevronDown } from '@/components/Icons'
 import { ThrottlistIcon } from '@/components/ThrottlistLogo'
-import { listPosts, listParts, getUser } from '@/lib/data'
+import { listPosts, listParts, getUser, MOCK_BUILDS } from '@/lib/data'
 import { colors, MOCK_USER_ID } from '@/constants/throttlist'
 import PostCard from '@/components/PostCard'
 import PartDetailSheet from '@/components/PartDetailSheet'
@@ -54,6 +56,10 @@ export default function FeedScreen() {
   const [sortMode, setSortMode] = useState<SortMode>('for-you')
   const [buildTypeFilter, setBuildTypeFilter] = useState('all')
   const [typePickerOpen, setTypePickerOpen] = useState(false)
+  const [typeSearch, setTypeSearch] = useState('')
+  const [buildFilter, setBuildFilter] = useState('')
+  const [buildPickerOpen, setBuildPickerOpen] = useState(false)
+  const [buildSearch, setBuildSearch] = useState('')
   const scrollY = useRef(new Animated.Value(0)).current
 
   const { data: posts = [], isLoading: postsLoading } = useQuery({
@@ -77,8 +83,19 @@ export default function FeedScreen() {
     setRefreshing(false)
   }, [queryClient])
 
+  const followedBuilds = useMemo(() => {
+    const q = buildSearch.toLowerCase()
+    return [...MOCK_BUILDS]
+      .sort((a, b) => b.followerCount - a.followerCount)
+      .filter(b => !q || b.nickname.toLowerCase().includes(q) || b.make.toLowerCase().includes(q) || b.model.toLowerCase().includes(q))
+      .slice(0, 10)
+  }, [buildSearch])
+
   const displayedPosts = useMemo(() => {
     let result = [...posts]
+    if (buildFilter) {
+      result = result.filter(p => p.buildId === buildFilter)
+    }
     if (buildTypeFilter !== 'all') {
       result = result.filter(p => p.buildType === buildTypeFilter)
     }
@@ -86,7 +103,7 @@ export default function FeedScreen() {
       result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     }
     return result
-  }, [posts, sortMode, buildTypeFilter])
+  }, [posts, sortMode, buildTypeFilter, buildFilter])
 
   const headerTranslate = scrollY.interpolate({
     inputRange: [0, 70],
@@ -116,6 +133,13 @@ export default function FeedScreen() {
 
   const selectedTypeDef = BUILD_TYPES.find(t => t.id === buildTypeFilter) ?? BUILD_TYPES[0]
   const isTypeFiltered = buildTypeFilter !== 'all'
+  const selectedBuildDef = MOCK_BUILDS.find(b => b.id === buildFilter)
+  const isBuildFiltered = !!buildFilter
+
+  const filteredTypes = useMemo(() => {
+    const q = typeSearch.toLowerCase()
+    return BUILD_TYPES.filter(t => !q || t.label.toLowerCase().includes(q)).slice(0, 10)
+  }, [typeSearch])
 
   function renderEmptyState() {
     return (
@@ -204,6 +228,16 @@ export default function FeedScreen() {
           </Pressable>
 
           <Pressable
+            style={[styles.sortPill, isBuildFiltered && styles.sortPillActive]}
+            onPress={() => setBuildPickerOpen(true)}
+          >
+            <Text style={[styles.sortPillText, isBuildFiltered && styles.sortPillTextActive]}>
+              {isBuildFiltered ? selectedBuildDef?.nickname ?? 'Build' : 'Build'}
+            </Text>
+            <ChevronDown size={11} color={isBuildFiltered ? '#fff' : colors.textTertiary} />
+          </Pressable>
+
+          <Pressable
             style={[styles.sortPill, styles.typePill, isTypeFiltered && styles.sortPillActive]}
             onPress={() => setTypePickerOpen(true)}
           >
@@ -220,36 +254,110 @@ export default function FeedScreen() {
         visible={typePickerOpen}
         transparent
         animationType="fade"
-        onRequestClose={() => setTypePickerOpen(false)}
+        onRequestClose={() => { setTypePickerOpen(false); setTypeSearch('') }}
       >
-        <TouchableWithoutFeedback onPress={() => setTypePickerOpen(false)}>
+        <TouchableWithoutFeedback onPress={() => { setTypePickerOpen(false); setTypeSearch('') }}>
           <View style={styles.pickerBackdrop}>
             <TouchableWithoutFeedback>
               <View style={styles.pickerMenu}>
                 <Text style={styles.pickerTitle}>BUILD TYPE</Text>
-                {BUILD_TYPES.map(type => (
-                  <Pressable
-                    key={type.id}
-                    style={[
-                      styles.pickerRow,
-                      buildTypeFilter === type.id && styles.pickerRowActive,
-                    ]}
-                    onPress={() => {
-                      setBuildTypeFilter(type.id)
-                      setTypePickerOpen(false)
-                    }}
-                  >
-                    <Text style={[
-                      styles.pickerRowText,
-                      buildTypeFilter === type.id && styles.pickerRowTextActive,
-                    ]}>
-                      {type.label}
-                    </Text>
-                    {buildTypeFilter === type.id && (
-                      <Text style={styles.pickerCheck}>✓</Text>
-                    )}
-                  </Pressable>
-                ))}
+                <TextInput
+                  style={styles.pickerSearch}
+                  placeholder="Search types…"
+                  placeholderTextColor={colors.textTertiary}
+                  value={typeSearch}
+                  onChangeText={setTypeSearch}
+                  autoCorrect={false}
+                />
+                <ScrollView bounces={false} keyboardShouldPersistTaps="handled">
+                  {filteredTypes.map(type => (
+                    <Pressable
+                      key={type.id}
+                      style={[
+                        styles.pickerRow,
+                        buildTypeFilter === type.id && styles.pickerRowActive,
+                      ]}
+                      onPress={() => {
+                        setBuildTypeFilter(type.id)
+                        setTypePickerOpen(false)
+                        setTypeSearch('')
+                      }}
+                    >
+                      <Text style={[
+                        styles.pickerRowText,
+                        buildTypeFilter === type.id && styles.pickerRowTextActive,
+                      ]}>
+                        {type.label}
+                      </Text>
+                      {buildTypeFilter === type.id && (
+                        <Text style={styles.pickerCheck}>✓</Text>
+                      )}
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Build picker */}
+      <Modal
+        visible={buildPickerOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => { setBuildPickerOpen(false); setBuildSearch('') }}
+      >
+        <TouchableWithoutFeedback onPress={() => { setBuildPickerOpen(false); setBuildSearch('') }}>
+          <View style={styles.pickerBackdrop}>
+            <TouchableWithoutFeedback>
+              <View style={styles.pickerMenu}>
+                <Text style={styles.pickerTitle}>BUILD</Text>
+                <TextInput
+                  style={styles.pickerSearch}
+                  placeholder="Search builds…"
+                  placeholderTextColor={colors.textTertiary}
+                  value={buildSearch}
+                  onChangeText={setBuildSearch}
+                  autoCorrect={false}
+                />
+                <ScrollView bounces={false} keyboardShouldPersistTaps="handled">
+                  {buildFilter ? (
+                    <Pressable
+                      style={styles.pickerRow}
+                      onPress={() => {
+                        setBuildFilter('')
+                        setBuildPickerOpen(false)
+                        setBuildSearch('')
+                      }}
+                    >
+                      <Text style={[styles.pickerRowText, { color: colors.textTertiary }]}>All Builds</Text>
+                    </Pressable>
+                  ) : null}
+                  {followedBuilds.map(build => (
+                    <Pressable
+                      key={build.id}
+                      style={[styles.pickerRow, buildFilter === build.id && styles.pickerRowActive]}
+                      onPress={() => {
+                        setBuildFilter(build.id)
+                        setBuildPickerOpen(false)
+                        setBuildSearch('')
+                      }}
+                    >
+                      <View style={styles.buildPickerRowInner}>
+                        <Text style={[styles.pickerRowText, buildFilter === build.id && styles.pickerRowTextActive]}>
+                          {build.nickname}
+                        </Text>
+                        <Text style={styles.buildPickerSub}>
+                          {build.year} {build.make} {build.model}
+                        </Text>
+                      </View>
+                      {buildFilter === build.id && (
+                        <Text style={styles.pickerCheck}>✓</Text>
+                      )}
+                    </Pressable>
+                  ))}
+                </ScrollView>
               </View>
             </TouchableWithoutFeedback>
           </View>
@@ -448,6 +556,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.accent,
     fontWeight: '700',
+  },
+  pickerSearch: {
+    fontSize: 13,
+    color: colors.textPrimary,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  buildPickerRowInner: {
+    flex: 1,
+  },
+  buildPickerSub: {
+    fontSize: 11,
+    color: colors.textTertiary,
+    marginTop: 2,
   },
   emptyContainer: {
     flex: 1,
