@@ -9,6 +9,7 @@ import {
   ScrollView,
   Linking,
 } from 'react-native'
+import Svg, { Path as SvgPath } from 'react-native-svg'
 import { Heart, MessageCircle, Share2, ExternalLink, X, ProBadge, Tag } from '@/components/Icons'
 import { colors, timeAgo, formatFollowers } from '@/constants/throttlist'
 import { isProUser, getPostComments } from '@/lib/data'
@@ -135,8 +136,17 @@ export default function PostCard({
 
           {taggedParts.length > 0 && (
             <Pressable style={styles.partsBadge} onPress={() => setTagsOpen(o => !o)}>
-              <Tag size={11} color="#fff" />
-              <Text style={styles.partsBadgeText}>{taggedParts.length}</Text>
+              <Svg width={48} height={20} viewBox="0 0 48 20">
+                <SvgPath
+                  d="M 0 10 L 10 0 L 44 0 Q 48 0 48 4 L 48 16 Q 48 20 44 20 L 10 20 Z M 13 10 m -2.5 0 a 2.5 2.5 0 1 0 5 0 a 2.5 2.5 0 1 0 -5 0"
+                  fill={colors.accent}
+                  fillRule="evenodd"
+                />
+              </Svg>
+              <View style={styles.partsBadgeContent}>
+                <Tag size={11} color="#fff" />
+                <Text style={styles.partsBadgeText}>{taggedParts.length}</Text>
+              </View>
             </Pressable>
           )}
 
@@ -374,12 +384,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     right: 12,
-    backgroundColor: colors.accent,
-    borderRadius: 10,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    width: 48,
+    height: 20,
+  },
+  partsBadgeContent: {
+    position: 'absolute',
+    left: 17,
+    right: 2,
+    top: 0,
+    bottom: 0,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 4,
   },
   partsBadgeText: {
