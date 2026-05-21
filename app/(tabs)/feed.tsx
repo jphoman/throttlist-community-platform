@@ -197,7 +197,7 @@ export default function FeedScreen() {
         <View style={styles.mainHeader} pointerEvents="box-none">
           <View style={styles.headerInner} pointerEvents="box-none">
             <View style={styles.headerSpacer} />
-            <ThrottlistIcon size={44} color={colors.accent} />
+            <ThrottlistIcon size={60} color={colors.accent} />
             <Pressable style={styles.bellBtn} onPress={() => router.push('/alerts')}>
               <Bell size={22} color={colors.textSecondary} />
               <View style={styles.badge}>
