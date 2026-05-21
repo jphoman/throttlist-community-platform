@@ -43,9 +43,18 @@ export default function PostCard({
   onShopPress,
 }: PostCardProps) {
   const [liked, setLiked] = useState(false)
+  const [likedComments, setLikedComments] = useState<Set<string>>(new Set())
   const [photoIndex, setPhotoIndex] = useState(0)
   const [tagsOpen, setTagsOpen] = useState(false)
   const [commentSheetOpen, setCommentSheetOpen] = useState(false)
+
+  function toggleCommentLike(id: string) {
+    setLikedComments(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
   const photos: string[] = (() => {
     try { return JSON.parse(post.photos) } catch { return [] }
@@ -241,15 +250,24 @@ export default function PostCard({
           </Text>
         )}
 
-        {previewComments.map(c => (
-          <View key={c.id} style={styles.commentRow}>
-            <Text style={styles.commentText}>
-              <Text style={styles.metaUsername}>{c.username} </Text>
-              {c.body}
-            </Text>
-            <Heart size={16} color={colors.textTertiary} />
-          </View>
-        ))}
+        {previewComments.map(c => {
+          const isCommentLiked = likedComments.has(c.id)
+          return (
+            <View key={c.id} style={styles.commentRow}>
+              <Text style={styles.commentText}>
+                <Text style={styles.metaUsername}>{c.username} </Text>
+                {c.body}
+              </Text>
+              <Pressable onPress={() => toggleCommentLike(c.id)} hitSlop={8}>
+                <Heart
+                  size={16}
+                  color={isCommentLiked ? colors.accent : colors.textTertiary}
+                  fill={isCommentLiked ? colors.accent : 'none'}
+                />
+              </Pressable>
+            </View>
+          )
+        })}
 
         {post.commentCount > 0 && (
           <Pressable onPress={openComments}>
