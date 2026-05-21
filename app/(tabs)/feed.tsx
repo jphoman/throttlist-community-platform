@@ -22,7 +22,7 @@ import PostCard from '@/components/PostCard'
 import PartDetailSheet from '@/components/PartDetailSheet'
 import type { Post, Part } from '@/types'
 
-const HEADER_HEIGHT = Platform.OS === 'ios' ? 98 : 60
+const HEADER_HEIGHT = Platform.OS === 'ios' ? 76 : 72
 const SORT_HEADER_HEIGHT = 36
 const COMBINED_HEADER_HEIGHT = HEADER_HEIGHT + SORT_HEADER_HEIGHT
 
@@ -197,7 +197,7 @@ export default function FeedScreen() {
         <View style={styles.mainHeader} pointerEvents="box-none">
           <View style={styles.headerInner} pointerEvents="box-none">
             <View style={styles.headerSpacer} />
-            <ThrottlistIcon size={60} color={colors.accent} />
+            <ThrottlistIcon size={44} color={colors.accent} />
             <Pressable style={styles.bellBtn} onPress={() => router.push('/alerts')}>
               <Bell size={22} color={colors.textSecondary} />
               <View style={styles.badge}>
@@ -228,23 +228,23 @@ export default function FeedScreen() {
           </Pressable>
 
           <Pressable
-            style={[styles.sortPill, isBuildFiltered && styles.sortPillActive]}
-            onPress={() => setBuildPickerOpen(true)}
-          >
-            <Text style={[styles.sortPillText, isBuildFiltered && styles.sortPillTextActive]}>
-              {isBuildFiltered ? selectedBuildDef?.nickname ?? 'Build' : 'Build'}
-            </Text>
-            <ChevronDown size={11} color={isBuildFiltered ? '#fff' : colors.textTertiary} />
-          </Pressable>
-
-          <Pressable
-            style={[styles.sortPill, styles.typePill, isTypeFiltered && styles.sortPillActive]}
+            style={[styles.sortPill, isTypeFiltered && styles.sortPillActive]}
             onPress={() => setTypePickerOpen(true)}
           >
             <Text style={[styles.sortPillText, isTypeFiltered && styles.sortPillTextActive]}>
               {isTypeFiltered ? selectedTypeDef.label : 'Build Type'}
             </Text>
             <ChevronDown size={11} color={isTypeFiltered ? '#fff' : colors.textTertiary} />
+          </Pressable>
+
+          <Pressable
+            style={[styles.sortPill, styles.typePill, isBuildFiltered && styles.sortPillActive]}
+            onPress={() => setBuildPickerOpen(true)}
+          >
+            <Text style={[styles.sortPillText, isBuildFiltered && styles.sortPillTextActive]}>
+              {isBuildFiltered ? selectedBuildDef?.nickname ?? 'Build' : 'Build'}
+            </Text>
+            <ChevronDown size={11} color={isBuildFiltered ? '#fff' : colors.textTertiary} />
           </Pressable>
         </View>
       </Animated.View>
