@@ -1,7 +1,17 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { SvgXml } from 'react-native-svg'
+import Svg, { Path } from 'react-native-svg'
+import Animated, {
+  useSharedValue,
+  useAnimatedProps,
+  useAnimatedStyle,
+  withTiming,
+  withSequence,
+  withDelay,
+  Easing,
+} from 'react-native-reanimated'
 
-// Full wordmark — outlined paths from Throttlist Logo.svg
+// ── Wordmark ─────────────────────────────────────────────────────────────────
 // viewBox 302.4 × 100.8
 const LOGO_XML = (color: string) => `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 302.4 100.8" fill="${color}">
@@ -18,12 +28,16 @@ const LOGO_XML = (color: string) => `
   <path d="M147.83,16.56s1.38-.45,1.28-.92c-.08-.39-1.38-.05-2.91.22-2.43.42-24.7,5.22-24.7,5.22-.34.08-.46-.1-.5-.24-.16-1.34,1.75-4.96,1.95-6.87,0-.06.01-.12.01-.18,0,0,0-.01,0-.02,0-.72-.45-.87-.75-.89-.61.01-1.69.17-3.12.44h0s-.04,0-.11.02c-.41.08-.85.14-1.3.25-6.53,1.68-18.63,5.77-20.38,6.08-1.58.28-1.29-.85-1.11-1.31.03-.06.05-.13.08-.19,0,0,0,0,0,0h0c.55-1.27.82-2.71,1.14-3.81,0,0,0,0,0,0,.63-2.19-.36-2.18-.36-2.18-2.04-.17-37.27,18.33-31.7,16.89,5.57-1.44,18.64-4.36,18.64-4.36,0,0,0,0,0,0,.1-.02.48-.04.54.51,0,0-.1,1.3-.5,2.23-.4.94-1.02,2.29-1.1,3.32,0,.27.05,1.09,1.09,1.05.08,0,.15-.01.23-.02.02,0,.03,0,.05,0,0,0,7.24-2.11,9.64-3.13s18.81-7.31,18.81-7.31c0,0,1.05-.28.89.78-.03.13-.06.26-.09.39,0,0,0,0,0,.02-.02.06-.03.11-.04.16-.55,2.01-1.74,4.82-1.42,5.92.05.14.22.41.77.33.68-.08,1.91-.36,3.55-.79h0c16.65-6.63,16.75-6.44,31.4-11.61Z"/>
 </svg>`
 
-// Standalone bolt icon — from Throttlist Icon.svg
-// tight viewBox trimmed to actual bolt bounds (getBBox: x=6.02 y=117.37 w=290.36 h=67.66)
-const ICON_XML = (color: string) => `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="6.02 117.37 290.36 67.66" fill="${color}">
-  <path d="M291.94,132.47s4.75-1.55,4.42-3.16c-.28-1.35-4.74-.16-10,.76-8.36,1.46-85.02,17.98-85.02,17.98-1.17.27-1.58-.35-1.71-.84-.55-4.6,6.02-17.07,6.72-23.66.02-.22.04-.43.05-.62,0-.03,0-.05,0-.08.03-2.47-1.54-2.98-2.58-3.05-2.1.05-5.83.6-10.75,1.52h0s-.13.02-.38.07c-1.4.26-2.91.47-4.47.87-22.49,5.77-64.13,19.85-70.15,20.93-5.45.98-4.45-2.92-3.83-4.52.09-.22.19-.43.28-.65,0,0,0-.01,0-.01h0c1.9-4.38,2.82-9.33,3.92-13.13,0,0,0,0,0,0,2.18-7.52-1.25-7.51-1.25-7.51-7.03-.57-128.3,63.1-109.12,58.15,19.17-4.95,64.17-15.01,64.17-15.01,0,0,0,0,0,0,.35-.06,1.66-.14,1.85,1.75,0,0-.35,4.47-1.72,7.69-1.37,3.22-3.5,7.87-3.79,11.44-.03.92.18,3.74,3.75,3.63.26-.02.52-.04.81-.07.06,0,.11,0,.17-.02,0,0,24.93-7.27,33.18-10.79,8.25-3.51,64.74-25.15,64.74-25.15,0,0,3.62-.95,3.08,2.7-.09.43-.2.88-.32,1.34,0,.02,0,.03-.01.05-.07.21-.11.39-.15.56-1.88,6.93-5.97,16.61-4.88,20.4.17.47.76,1.4,2.65,1.13,2.35-.28,6.59-1.25,12.23-2.74h0c57.31-22.81,57.66-22.16,108.1-39.97Z"/>
-</svg>`
+// ── Bolt icon ─────────────────────────────────────────────────────────────────
+// tight viewBox: x=6.02 y=117.37 w=290.36 h=67.66 (measured via getBBox)
+// path length: 742.6 SVG units (measured via getTotalLength)
+const BOLT_D = 'M291.94,132.47s4.75-1.55,4.42-3.16c-.28-1.35-4.74-.16-10,.76-8.36,1.46-85.02,17.98-85.02,17.98-1.17.27-1.58-.35-1.71-.84-.55-4.6,6.02-17.07,6.72-23.66.02-.22.04-.43.05-.62,0-.03,0-.05,0-.08.03-2.47-1.54-2.98-2.58-3.05-2.1.05-5.83.6-10.75,1.52h0s-.13.02-.38.07c-1.4.26-2.91.47-4.47.87-22.49,5.77-64.13,19.85-70.15,20.93-5.45.98-4.45-2.92-3.83-4.52.09-.22.19-.43.28-.65,0,0,0-.01,0-.01h0c1.9-4.38,2.82-9.33,3.92-13.13,0,0,0,0,0,0,2.18-7.52-1.25-7.51-1.25-7.51-7.03-.57-128.3,63.1-109.12,58.15,19.17-4.95,64.17-15.01,64.17-15.01,0,0,0,0,0,0,.35-.06,1.66-.14,1.85,1.75,0,0-.35,4.47-1.72,7.69-1.37,3.22-3.5,7.87-3.79,11.44-.03.92.18,3.74,3.75,3.63.26-.02.52-.04.81-.07.06,0,.11,0,.17-.02,0,0,24.93-7.27,33.18-10.79,8.25-3.51,64.74-25.15,64.74-25.15,0,0,3.62-.95,3.08,2.7-.09.43-.2.88-.32,1.34,0,.02,0,.03-.01.05-.07.21-.11.39-.15.56-1.88,6.93-5.97,16.61-4.88,20.4.17.47.76,1.4,2.65,1.13,2.35-.28,6.59-1.25,12.23-2.74h0c57.31-22.81,57.66-22.16,108.1-39.97Z'
+const BOLT_PATH_LENGTH = 742.6
+const ICON_ASPECT = 290.36 / 67.66
+
+const AnimatedPath = Animated.createAnimatedComponent(Path)
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface LogoProps {
   color?: string
@@ -35,8 +49,10 @@ interface IconProps {
   size?: number
 }
 
+// ── Components ────────────────────────────────────────────────────────────────
+
 export function ThrottlistLogo({ color = 'white', height = 24 }: LogoProps) {
-  const aspectRatio = 302.4 / 100.8  // ~3
+  const aspectRatio = 302.4 / 100.8
   return (
     <SvgXml
       xml={LOGO_XML(color)}
@@ -46,14 +62,75 @@ export function ThrottlistLogo({ color = 'white', height = 24 }: LogoProps) {
   )
 }
 
-const ICON_ASPECT = 290.36 / 67.66 // bolt width/height from tight viewBox
-
 export function ThrottlistIcon({ color = 'white', size = 24 }: IconProps) {
+  const w = size
+  const h = size / ICON_ASPECT
+
+  // Start pre-drawn so there's no blank flash before the first useEffect fires
+  const dashOffset   = useSharedValue(0)
+  const fillOpacity  = useSharedValue(1)
+  const strokeOpacity = useSharedValue(0)
+  const iconOpacity  = useSharedValue(1)
+
+  useEffect(() => {
+    function run() {
+      // ── instant reset to pre-draw state ──────────────────────────────────
+      dashOffset.value    = BOLT_PATH_LENGTH
+      fillOpacity.value   = 0
+      strokeOpacity.value = 1
+      iconOpacity.value   = 1
+
+      // ── phase 1: draw-on (350ms) ──────────────────────────────────────────
+      dashOffset.value = withDelay(
+        16,
+        withTiming(0, { duration: 350, easing: Easing.linear }),
+      )
+
+      // ── phase 2: fill fades in, stroke fades out (100ms, starts at 366ms) ─
+      fillOpacity.value   = withDelay(366, withTiming(1, { duration: 100 }))
+      strokeOpacity.value = withDelay(366, withTiming(0, { duration: 100 }))
+
+      // ── phase 3: electrical flicker (200ms total, starts at 466ms) ────────
+      iconOpacity.value = withDelay(
+        466,
+        withSequence(
+          withTiming(0.3, { duration: 50 }),
+          withTiming(1,   { duration: 50 }),
+          withTiming(0.5, { duration: 50 }),
+          withTiming(1,   { duration: 50 }),
+        ),
+      )
+    }
+
+    run()
+    const id = setInterval(run, 5000)
+    return () => clearInterval(id)
+  }, [])
+
+  const animatedPathProps = useAnimatedProps(() => ({
+    strokeDashoffset: dashOffset.value,
+    fillOpacity:      fillOpacity.value,
+    strokeOpacity:    strokeOpacity.value,
+  }))
+
+  const animatedViewStyle = useAnimatedStyle(() => ({
+    opacity: iconOpacity.value,
+  }))
+
   return (
-    <SvgXml
-      xml={ICON_XML(color)}
-      width={size}
-      height={size / ICON_ASPECT}
-    />
+    <Animated.View style={[{ width: w, height: h }, animatedViewStyle]}>
+      <Svg width={w} height={h} viewBox="6.02 117.37 290.36 67.66">
+        <AnimatedPath
+          d={BOLT_D}
+          fill={color}
+          stroke={color}
+          strokeWidth={10}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeDasharray={BOLT_PATH_LENGTH}
+          animatedProps={animatedPathProps}
+        />
+      </Svg>
+    </Animated.View>
   )
 }
