@@ -17,7 +17,7 @@ import CommentSheet from '@/components/CommentSheet'
 import type { Post, Part } from '@/types'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
-const PHOTO_HEIGHT = Math.round(SCREEN_WIDTH * 0.85)
+const PHOTO_HEIGHT = Math.round(SCREEN_WIDTH * (4 / 3))
 
 interface PostCardProps {
   post: Post

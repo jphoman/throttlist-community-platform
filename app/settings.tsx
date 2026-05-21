@@ -22,7 +22,6 @@ import {
   Globe,
   Instagram,
   Youtube,
-  ShoppingCart,
   ProBadge,
 } from '@/components/Icons'
 import {
@@ -417,7 +416,6 @@ export default function SettingsScreen() {
         <View style={styles.group}>
           <View style={styles.row}>
             <View style={styles.rowLeft}>
-              <ShoppingCart size={16} color={colors.textSecondary} />
               <Text style={styles.rowText}>Show Store</Text>
               {!isPro && <ProBadge />}
             </View>
