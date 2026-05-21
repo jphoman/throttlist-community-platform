@@ -228,23 +228,23 @@ export default function FeedScreen() {
           </Pressable>
 
           <Pressable
-            style={[styles.sortPill, isTypeFiltered && styles.sortPillActive]}
-            onPress={() => setTypePickerOpen(true)}
-          >
-            <Text style={[styles.sortPillText, isTypeFiltered && styles.sortPillTextActive]}>
-              {isTypeFiltered ? selectedTypeDef.label : 'Build Type'}
-            </Text>
-            <ChevronDown size={11} color={isTypeFiltered ? '#fff' : colors.textTertiary} />
-          </Pressable>
-
-          <Pressable
-            style={[styles.sortPill, styles.typePill, isBuildFiltered && styles.sortPillActive]}
+            style={[styles.sortPill, isBuildFiltered && styles.sortPillActive]}
             onPress={() => setBuildPickerOpen(true)}
           >
             <Text style={[styles.sortPillText, isBuildFiltered && styles.sortPillTextActive]}>
               {isBuildFiltered ? selectedBuildDef?.nickname ?? 'Build' : 'Build'}
             </Text>
             <ChevronDown size={11} color={isBuildFiltered ? '#fff' : colors.textTertiary} />
+          </Pressable>
+
+          <Pressable
+            style={[styles.sortPill, styles.typePill, isTypeFiltered && styles.sortPillActive]}
+            onPress={() => setTypePickerOpen(true)}
+          >
+            <Text style={[styles.sortPillText, isTypeFiltered && styles.sortPillTextActive]}>
+              {isTypeFiltered ? selectedTypeDef.label : 'Build Type'}
+            </Text>
+            <ChevronDown size={11} color={isTypeFiltered ? '#fff' : colors.textTertiary} />
           </Pressable>
         </View>
       </Animated.View>
