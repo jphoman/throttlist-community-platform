@@ -4,3 +4,34 @@
 
 expo-env.d.ts
 # @end expo-cli
+
+# dependencies
+node_modules/
+
+# Expo build output
+.expo/
+dist/
+web-build/
+
+# Native
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+ios/
+android/
+
+# macOS
+.DS_Store
+*.pem
+
+# Editor
+.idea/
+
+# Claude worktree config
+.claude/
+
+# Environment
+.env
+.env.local

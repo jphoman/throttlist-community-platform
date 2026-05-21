@@ -9,7 +9,7 @@ import {
   Linking,
   Platform,
 } from 'react-native'
-import { X, ExternalLink, ShoppingCart, Wrench, Palette } from '@blinkdotnew/mobile-ui'
+import { X, ExternalLink, ShoppingCart, Wrench, Palette } from '@/components/Icons'
 import { colors, buildAffiliateUrl } from '@/constants/throttlist'
 import type { Part } from '@/types'
 

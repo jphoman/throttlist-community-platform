@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router'
-import { Home, Compass, Plus, Bell, User } from '@blinkdotnew/mobile-ui'
+import { Home, Compass, Plus, Send, User } from '@/components/Icons'
 import { View, StyleSheet, Platform } from 'react-native'
 import { colors } from '@/constants/throttlist'
 
@@ -8,35 +8,34 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: { display: 'none' },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarLabelStyle: styles.tabLabel,
         tabBarShowLabel: true,
         tabBarItemStyle: styles.tabItem,
-        // No indicator / highlight box behind active icon
         tabBarActiveBackgroundColor: 'transparent',
         tabBarInactiveBackgroundColor: 'transparent',
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="feed"
         options={{
           title: 'Feed',
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ focused }) => (
             <Home size={22} color={focused ? '#FFFFFF' : colors.textSecondary} />
           ),
-          tabBarLabel: ({ focused }) => null,
+          tabBarLabel: () => null,
         }}
       />
       <Tabs.Screen
         name="discover"
         options={{
           title: 'Discover',
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ focused }) => (
             <Compass size={22} color={focused ? '#FFFFFF' : colors.textSecondary} />
           ),
-          tabBarLabel: ({ focused }) => null,
+          tabBarLabel: () => null,
         }}
       />
       <Tabs.Screen
@@ -52,14 +51,22 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="alerts"
+        name="messages"
         options={{
-          title: 'Alerts',
+          title: 'Messages',
           tabBarIcon: ({ focused }) => (
-            <Bell size={22} color={focused ? '#FFFFFF' : colors.textSecondary} />
+            <Send size={22} color={focused ? '#FFFFFF' : colors.textSecondary} />
           ),
-          tabBarLabel: ({ focused }) => null,
+          tabBarLabel: () => null,
         }}
+      />
+      <Tabs.Screen
+        name="search"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="alerts"
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="profile"
@@ -68,7 +75,7 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => (
             <User size={22} color={focused ? '#FFFFFF' : colors.textSecondary} />
           ),
-          tabBarLabel: ({ focused }) => null,
+          tabBarLabel: () => null,
         }}
       />
     </Tabs>

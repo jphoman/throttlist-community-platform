@@ -41,6 +41,8 @@ export default function InitialsAvatar({ name, photoUrl, size = 38 }: Props) {
 const styles = StyleSheet.create({
   base: {
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.surface3,
   },
   circle: {
     backgroundColor: colors.surface1,

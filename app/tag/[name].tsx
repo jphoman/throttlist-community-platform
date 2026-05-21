@@ -2,33 +2,32 @@ import React, { useState } from 'react'
 import { View, Text, StyleSheet, Pressable, FlatList, Platform } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Hash } from '@blinkdotnew/mobile-ui'
-import { blink } from '@/lib/blink'
+import { ArrowLeft, Hash } from '@/components/Icons'
+import { listBuilds, listUsers, getTag } from '@/lib/data'
 import { colors, formatFollowers } from '@/constants/throttlist'
 import BuildCard from '@/components/BuildCard'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { Build, Tag as TagType } from '@/types'
 
 async function fetchTagData(name: string) {
-  const tag = await blink.db.tags.get(name) as TagType | null
-  const builds = await blink.db.builds.list({
-    where: { status: 'active' },
-    orderBy: { followerCount: 'desc' },
-    limit: 20,
-  }) as Build[]
+  const [tag, allBuilds, allUsers] = await Promise.all([
+    getTag(name),
+    listBuilds({ status: 'active' }),
+    listUsers(),
+  ])
 
-  const userIds = [...new Set(builds.map(b => b.userId))]
-  const users = await Promise.all(userIds.map(id => blink.db.users.get(id)))
-  const userMap: Record<string, any> = {}
-  users.forEach(u => { if (u) userMap[u.id] = u })
+  const userMap = Object.fromEntries(allUsers.map(u => [u.id, u]))
 
-  // Filter builds that have this tag
-  const taggedBuilds = builds.filter(b => {
-    try { return JSON.parse(b.tags).includes(name) } catch { return false }
-  }).map(b => ({
-    ...b,
-    username: userMap[b.userId]?.username,
-  }))
+  const taggedBuilds = [...allBuilds]
+    .filter(b => {
+      try { return JSON.parse(b.tags).includes(name) } catch { return false }
+    })
+    .sort((a, b) => b.followerCount - a.followerCount)
+    .slice(0, 20)
+    .map(b => ({
+      ...b,
+      username: userMap[b.userId]?.username,
+    }))
 
   return { tag, builds: taggedBuilds }
 }

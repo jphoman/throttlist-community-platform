@@ -1,7 +1,8 @@
 import React from 'react'
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native'
-import { Bell } from '@blinkdotnew/mobile-ui'
+import { Bell } from '@/components/Icons'
 import { colors } from '@/constants/throttlist'
+import { ThrottlistLogo } from '@/components/ThrottlistLogo'
 
 interface FeedHeaderProps {
   unreadCount?: number
@@ -11,7 +12,7 @@ interface FeedHeaderProps {
 export default function FeedHeader({ unreadCount = 0, onAlertsPress }: FeedHeaderProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.wordmark}>THROTTLIST</Text>
+      <ThrottlistLogo color={colors.accent} height={22} />
       <Pressable onPress={onAlertsPress} style={styles.alertBtn}>
         <Bell size={22} color={colors.textSecondary} />
         {unreadCount > 0 && (
@@ -36,13 +37,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  wordmark: {
-    color: colors.accent,
-    fontSize: 20,
-    fontWeight: '900',
-    letterSpacing: 2,
-  },
-  alertBtn: {
+alertBtn: {
     position: 'relative',
     padding: 4,
   },

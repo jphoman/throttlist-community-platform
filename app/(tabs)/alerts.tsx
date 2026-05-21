@@ -1,9 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet, Platform, Image } from 'react-native'
-import { useQuery } from '@tanstack/react-query'
-import { Bell, Heart, MessageCircle, UserPlus } from '@blinkdotnew/mobile-ui'
-import { colors, timeAgo, MOCK_USER_ID } from '@/constants/throttlist'
-import { blink } from '@/lib/blink'
+import { Bell, Heart, MessageCircle, UserPlus } from '@/components/Icons'
+import { colors, timeAgo } from '@/constants/throttlist'
 
 // Mock alerts since we don't have a notifications table yet
 const MOCK_ALERTS = [
@@ -145,6 +143,8 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
+    borderWidth: 1,
+    borderColor: colors.surface3,
   },
   iconBadge: {
     position: 'absolute',

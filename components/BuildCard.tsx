@@ -1,7 +1,8 @@
 import React from 'react'
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native'
-import { Users, Wrench } from '@blinkdotnew/mobile-ui'
+import { Users, Tag, MessageCircle } from '@/components/Icons'
 import { colors, formatFollowers } from '@/constants/throttlist'
+import { MOCK_PARTS, MOCK_COMMENTS } from '@/lib/data'
 import type { Build } from '@/types'
 
 interface BuildCardProps {
@@ -22,6 +23,9 @@ export default function BuildCard({
   const tags: string[] = (() => {
     try { return JSON.parse(build.tags) } catch { return [] }
   })()
+
+  const tagCount = MOCK_PARTS.filter(p => p.buildId === build.id).length
+  const commentCount = MOCK_COMMENTS.filter(c => c.targetId === build.id).length
 
   return (
     <Pressable style={styles.card} onPress={onPress}>
@@ -49,7 +53,6 @@ export default function BuildCard({
             <Text style={styles.meta}>
               {build.year} {build.make} {build.model}
             </Text>
-            <Text style={styles.handle}>@{build.username}</Text>
           </View>
           {showFollowButton && build.status !== 'archived' && (
             <Pressable
@@ -68,6 +71,16 @@ export default function BuildCard({
           <View style={styles.stat}>
             <Users size={12} color={colors.textTertiary} />
             <Text style={styles.statText}>{formatFollowers(build.followerCount)}</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.stat}>
+            <Tag size={12} color={colors.textTertiary} />
+            <Text style={styles.statText}>{tagCount}</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.stat}>
+            <MessageCircle size={12} color={colors.textTertiary} />
+            <Text style={styles.statText}>{commentCount}</Text>
           </View>
         </View>
 
@@ -186,6 +199,11 @@ const styles = StyleSheet.create({
   statText: {
     color: colors.textTertiary,
     fontSize: 12,
+  },
+  statDivider: {
+    width: 1,
+    height: 10,
+    backgroundColor: colors.surface2,
   },
   tagsRow: {
     flexDirection: 'row',

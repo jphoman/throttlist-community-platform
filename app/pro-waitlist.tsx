@@ -1,9 +1,8 @@
 import React, { useState } from 'react'
 import { View, Text, StyleSheet, Pressable, TextInput, Platform, ScrollView } from 'react-native'
 import { router } from 'expo-router'
-import { ArrowLeft, Star, DollarSign, TrendingUp, CheckCircle } from '@blinkdotnew/mobile-ui'
-import { blink } from '@/lib/blink'
-import { colors, MOCK_USER_ID } from '@/constants/throttlist'
+import { ArrowLeft, Star, DollarSign, TrendingUp, CheckCircle } from '@/components/Icons'
+import { colors } from '@/constants/throttlist'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function ProWaitlistScreen() {
@@ -16,10 +15,10 @@ export default function ProWaitlistScreen() {
     if (!email.trim() || loading) return
     setLoading(true)
     try {
-      await blink.db.proWaitlist.create({ userId: MOCK_USER_ID, email: email.trim() })
+      // no-op: waitlist submission not yet implemented
       setJoined(true)
     } catch (e) {
-      setJoined(true) // show success anyway (may already be on list)
+      setJoined(true)
     } finally {
       setLoading(false)
     }

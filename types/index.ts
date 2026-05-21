@@ -31,6 +31,7 @@ export interface Build {
   username?: string
   displayName?: string
   avatarUrl?: string
+  ownerIsPro?: boolean
 }
 
 export interface Part {

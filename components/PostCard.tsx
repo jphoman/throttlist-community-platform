@@ -7,15 +7,17 @@ import {
   Image,
   Dimensions,
   ScrollView,
+  Linking,
 } from 'react-native'
-import { Heart, MessageCircle, Share2, ExternalLink } from '@blinkdotnew/mobile-ui'
+import { Heart, MessageCircle, Share2, ExternalLink, X, ProBadge } from '@/components/Icons'
 import { colors, timeAgo, formatFollowers } from '@/constants/throttlist'
+import { isProUser } from '@/lib/data'
 import InitialsAvatar from '@/components/InitialsAvatar'
+import CommentSheet from '@/components/CommentSheet'
 import type { Post, Part } from '@/types'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
-// 4:3 ratio for post photo
-const PHOTO_HEIGHT = Math.round(SCREEN_WIDTH * 0.75)
+const PHOTO_HEIGHT = Math.round(SCREEN_WIDTH * 0.85)
 
 interface PostCardProps {
   post: Post
@@ -40,6 +42,8 @@ export default function PostCard({
 }: PostCardProps) {
   const [liked, setLiked] = useState(false)
   const [photoIndex, setPhotoIndex] = useState(0)
+  const [tagsOpen, setTagsOpen] = useState(false)
+  const [commentSheetOpen, setCommentSheetOpen] = useState(false)
 
   const photos: string[] = (() => {
     try { return JSON.parse(post.photos) } catch { return [] }
@@ -57,25 +61,8 @@ export default function PostCard({
 
   return (
     <View style={styles.card}>
-      {/* Header row */}
-      <Pressable style={styles.header} onPress={onBuildPress}>
-        {/* Build cover photo as avatar */}
-        <InitialsAvatar
-          name={post.buildNickname || post.buildMake}
-          photoUrl={post.buildCoverPhotoUrl || null}
-          size={38}
-        />
-        <View style={styles.headerInfo}>
-          <Text style={styles.handle}>@{post.username}</Text>
-          <Text style={styles.buildName} numberOfLines={1}>
-            {post.buildNickname || `${post.buildYear} ${post.buildMake} ${post.buildModel}`}
-          </Text>
-        </View>
-        <Text style={styles.timestamp}>{timeAgo(post.createdAt)}</Text>
-      </Pressable>
-
-      {/* Photo carousel — bleeds edge to edge */}
-      {photos.length > 0 && (
+      {/* Full-bleed photo with overlaid header and actions */}
+      {photos.length > 0 ? (
         <View style={styles.photoWrap}>
           <ScrollView
             horizontal
@@ -87,27 +74,149 @@ export default function PostCard({
             }}
           >
             {photos.map((uri, i) => (
-              <Image
-                key={i}
-                source={{ uri }}
-                style={styles.photo}
-                resizeMode="cover"
-              />
+              <Pressable key={i} onPress={onBuildPress}>
+                <Image
+                  source={{ uri }}
+                  style={styles.photo}
+                  resizeMode="cover"
+                />
+              </Pressable>
             ))}
           </ScrollView>
+
+          {/* Gradient-like dark scrim at top for readability */}
+          <View style={styles.topScrim} pointerEvents="none" />
+
+          {/* Username + avatar overlaid top-left */}
+          <Pressable style={styles.overlayHeader} onPress={onBuildPress}>
+            <InitialsAvatar
+              name={post.displayName || post.username || post.buildMake}
+              photoUrl={post.avatarUrl || null}
+              size={34}
+            />
+            <View>
+              <View style={styles.usernameRow}>
+                <Text style={styles.overlayHandle}>@{post.username}</Text>
+                {isProUser(post.username) && <ProBadge size={12} />}
+              </View>
+              <Text style={styles.overlayBuild} numberOfLines={1}>
+                {post.buildNickname || `${post.buildYear} ${post.buildMake} ${post.buildModel}`}
+              </Text>
+            </View>
+          </Pressable>
+
+          {/* Tags badge top-right — tappable */}
+          {taggedParts.length > 0 && (
+            <Pressable style={styles.partsBadge} onPress={() => setTagsOpen(o => !o)}>
+              <Text style={styles.partsBadgeText}>{taggedParts.length} tags</Text>
+            </Pressable>
+          )}
+
+          {/* Dot indicators */}
           {photos.length > 1 && (
-            <View style={styles.dotRow}>
+            <View style={styles.dotRow} pointerEvents="none">
               {photos.map((_, i) => (
                 <View key={i} style={[styles.dot, photoIndex === i && styles.dotActive]} />
               ))}
             </View>
           )}
-          {taggedParts.length > 1 && (
-            <View style={styles.partsBadge}>
-              <Text style={styles.partsBadgeText}>{taggedParts.length} parts</Text>
-            </View>
+
+          {/* Action buttons overlaid bottom-right */}
+          <View style={styles.overlayActions}>
+            <Pressable style={styles.overlayActionBtn} onPress={handleLike}>
+              <Heart
+                size={22}
+                color={liked ? colors.accent : '#FFFFFF'}
+                fill={liked ? colors.accent : 'none'}
+              />
+              <Text style={[styles.overlayActionCount, liked && { color: colors.accent }]}>
+                {formatFollowers(post.likeCount + (liked ? 1 : 0))}
+              </Text>
+            </Pressable>
+            <Pressable style={styles.overlayActionBtn} onPress={() => { setCommentSheetOpen(true); onComment?.() }}>
+              <MessageCircle size={22} color="#FFFFFF" />
+              <Text style={styles.overlayActionCount}>{formatFollowers(post.commentCount)}</Text>
+            </Pressable>
+            <Pressable style={styles.overlayActionBtn} onPress={onShare}>
+              <Share2 size={22} color="#FFFFFF" />
+            </Pressable>
+          </View>
+
+          {/* Timestamp bottom-left */}
+          <Text style={styles.overlayTimestamp} pointerEvents="none">
+            {timeAgo(post.createdAt)}
+          </Text>
+
+          {/* Tags overlay panel — appears over the image when badge is tapped */}
+          {tagsOpen && taggedParts.length > 0 && (
+            <Pressable style={styles.tagsOverlay} onPress={() => setTagsOpen(false)}>
+              <Pressable onPress={e => e.stopPropagation()}>
+                <View style={styles.tagsPanel}>
+                  <View style={styles.tagsPanelHeader}>
+                    <Text style={styles.tagsPanelTitle}>Tagged Parts</Text>
+                    <Pressable onPress={() => setTagsOpen(false)} style={styles.tagsPanelClose}>
+                      <X size={16} color={colors.textSecondary} />
+                    </Pressable>
+                  </View>
+                  {taggedParts.map(part => (
+                    <Pressable
+                      key={part.id}
+                      style={styles.tagRow}
+                      onPress={() => {
+                        if (part.type === 'linkable' && part.sourceUrl) {
+                          Linking.openURL(part.sourceUrl)
+                          onShopPress?.(part)
+                        } else {
+                          onPartPress?.(part)
+                        }
+                        setTagsOpen(false)
+                      }}
+                    >
+                      <View style={[
+                        styles.tagDot,
+                        part.type === 'linkable' && { backgroundColor: colors.accent },
+                        part.type === 'reference' && { backgroundColor: colors.reference },
+                      ]} />
+                      <View style={styles.tagInfo}>
+                        <Text
+                          style={[styles.tagName, part.type === 'linkable' && { color: colors.accent }]}
+                          numberOfLines={1}
+                        >
+                          {part.name}
+                        </Text>
+                        {part.category ? (
+                          <Text style={styles.tagCategory}>{part.category}</Text>
+                        ) : null}
+                      </View>
+                      {part.type === 'linkable' && part.sourceUrl && (
+                        <ExternalLink size={13} color={colors.accent} />
+                      )}
+                    </Pressable>
+                  ))}
+                </View>
+              </Pressable>
+            </Pressable>
           )}
         </View>
+      ) : (
+        /* No photo: plain header row */
+        <Pressable style={styles.header} onPress={onBuildPress}>
+          <InitialsAvatar
+            name={post.displayName || post.username || post.buildMake}
+            photoUrl={post.avatarUrl || null}
+            size={38}
+          />
+          <View style={styles.headerInfo}>
+            <View style={styles.usernameRow}>
+              <Text style={styles.handle}>@{post.username}</Text>
+              {isProUser(post.username) && <ProBadge size={12} />}
+            </View>
+            <Text style={styles.buildName} numberOfLines={1}>
+              {post.buildNickname || `${post.buildYear} ${post.buildMake} ${post.buildModel}`}
+            </Text>
+          </View>
+          <Text style={styles.timestamp}>{timeAgo(post.createdAt)}</Text>
+        </Pressable>
       )}
 
       {/* Caption */}
@@ -117,106 +226,22 @@ export default function PostCard({
         </View>
       )}
 
-      {/* Tagged parts pills */}
-      {taggedParts.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.pillScroll}
-          contentContainerStyle={styles.pillRow}
-        >
-          {taggedParts.map(part => (
-            <Pressable
-              key={part.id}
-              style={[
-                styles.pill,
-                part.type === 'linkable' && styles.pillLinkable,
-                part.type === 'reference' && styles.pillReference,
-                part.type === 'service' && styles.pillService,
-              ]}
-              onPress={() => {
-                if (part.type === 'linkable') onShopPress?.(part)
-                else onPartPress?.(part)
-              }}
-            >
-              <View style={[
-                styles.pillDot,
-                part.type === 'linkable' && { backgroundColor: colors.accent },
-                part.type === 'reference' && { backgroundColor: colors.reference },
-                part.type === 'service' && { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.reference },
-              ]} />
-              <Text
-                style={[
-                  styles.pillText,
-                  part.type === 'linkable' && { color: colors.accent },
-                ]}
-                numberOfLines={1}
-              >
-                {part.name}
-              </Text>
-              {part.type === 'linkable' && (
-                <ExternalLink size={11} color={colors.accent} />
-              )}
-            </Pressable>
-          ))}
-        </ScrollView>
-      )}
+      {/* Bottom spacer */}
+      <View style={styles.cardBottom} />
 
-      {/* Action row */}
-      <View style={styles.actions}>
-        <Pressable style={styles.actionBtn} onPress={handleLike}>
-          <Heart
-            size={21}
-            color={liked ? colors.accent : colors.textSecondary}
-            fill={liked ? colors.accent : 'none'}
-          />
-          <Text style={[styles.actionCount, liked && { color: colors.accent }]}>
-            {formatFollowers(post.likeCount + (liked ? 1 : 0))}
-          </Text>
-        </Pressable>
-        <Pressable style={styles.actionBtn} onPress={onComment}>
-          <MessageCircle size={21} color={colors.textSecondary} />
-          <Text style={styles.actionCount}>{formatFollowers(post.commentCount)}</Text>
-        </Pressable>
-        <Pressable style={styles.actionBtn} onPress={onShare}>
-          <Share2 size={21} color={colors.textSecondary} />
-        </Pressable>
-      </View>
+      <CommentSheet
+        visible={commentSheetOpen}
+        postId={post.id}
+        onClose={() => setCommentSheetOpen(false)}
+      />
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface1,
-    marginBottom: 1,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surface2,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    gap: 10,
-  },
-  headerInfo: {
-    flex: 1,
-  },
-  handle: {
-    color: colors.accent,
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  buildName: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    marginTop: 1,
-  },
-  timestamp: {
-    color: colors.textSecondary,
-    fontSize: 12,
+    backgroundColor: colors.bg,
+    marginBottom: 2,
   },
   photoWrap: {
     position: 'relative',
@@ -225,6 +250,82 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH,
     height: PHOTO_HEIGHT,
     backgroundColor: colors.surface2,
+  },
+  topScrim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+    backgroundColor: 'transparent',
+  },
+  overlayHeader: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+  },
+  overlayHandle: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  overlayBuild: {
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 11,
+    marginTop: 1,
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+    maxWidth: SCREEN_WIDTH * 0.5,
+  },
+  overlayActions: {
+    position: 'absolute',
+    bottom: 14,
+    right: 12,
+    alignItems: 'center',
+    gap: 16,
+  },
+  overlayActionBtn: {
+    alignItems: 'center',
+    gap: 3,
+  },
+  overlayActionCount: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  overlayTimestamp: {
+    position: 'absolute',
+    bottom: 14,
+    left: 14,
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 11,
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  partsBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: colors.accent,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  partsBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
   },
   dotRow: {
     position: 'absolute',
@@ -244,19 +345,97 @@ const styles = StyleSheet.create({
   dotActive: {
     backgroundColor: '#FFFFFF',
   },
-  partsBadge: {
+  // Tags overlay
+  tagsOverlay: {
     position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: colors.accent,
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'flex-end',
   },
-  partsBadgeText: {
-    color: '#fff',
-    fontSize: 11,
+  tagsPanel: {
+    backgroundColor: 'rgba(10,10,10,0.92)',
+    borderTopWidth: 1,
+    borderTopColor: colors.surface2,
+    paddingBottom: 8,
+  },
+  tagsPanelHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surface2,
+  },
+  tagsPanelTitle: {
+    color: colors.textPrimary,
+    fontSize: 13,
     fontWeight: '700',
+  },
+  tagsPanelClose: {
+    padding: 4,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surface2 + '88',
+  },
+  tagDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: colors.surface2,
+    flexShrink: 0,
+  },
+  tagInfo: {
+    flex: 1,
+  },
+  tagName: {
+    color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  tagCategory: {
+    color: colors.textTertiary,
+    fontSize: 11,
+    marginTop: 1,
+  },
+  // No-photo fallback
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    gap: 10,
+  },
+  headerInfo: {
+    flex: 1,
+  },
+  usernameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  handle: {
+    color: colors.accent,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  buildName: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: 1,
+  },
+  timestamp: {
+    color: colors.textSecondary,
+    fontSize: 12,
   },
   captionWrap: {
     paddingHorizontal: 14,
@@ -267,66 +446,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  pillScroll: {
-    marginTop: 10,
-  },
-  pillRow: {
-    paddingHorizontal: 14,
-    gap: 7,
-    flexDirection: 'row',
-  },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.surface2,
-    backgroundColor: colors.surface2,
-    maxWidth: 180,
-  },
-  pillLinkable: {
-    borderColor: colors.accent + '66',
-    backgroundColor: colors.accent + '18',
-  },
-  pillReference: {
-    borderColor: colors.surface2,
-  },
-  pillService: {
-    borderColor: colors.surface2,
-  },
-  pillDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    flexShrink: 0,
-  },
-  pillText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontWeight: '500',
-    flexShrink: 1,
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 11,
-    gap: 2,
-  },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    marginRight: 6,
-  },
-  actionCount: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    fontWeight: '500',
+  cardBottom: {
+    height: 10,
   },
 })

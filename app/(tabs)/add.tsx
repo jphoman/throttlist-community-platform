@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet, Platform } from 'react-native'
-import { Plus } from '@blinkdotnew/mobile-ui'
+import { Plus } from '@/components/Icons'
 import { colors } from '@/constants/throttlist'
 
 export default function AddScreen() {
@@ -8,13 +8,13 @@ export default function AddScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Plus size={20} color={colors.accent} />
-        <Text style={styles.headerTitle}>Add Part</Text>
+        <Text style={styles.headerTitle}>Add Tag</Text>
       </View>
       <View style={styles.body}>
         <Plus size={48} color={colors.textTertiary} />
-        <Text style={styles.title}>Add a Part or Mod</Text>
+        <Text style={styles.title}>Tag a Mod or Part</Text>
         <Text style={styles.body2}>
-          Document every change to your build — parts, paint, and service.
+          Document every change to your build — mods, paint, and service.
         </Text>
       </View>
     </View>
