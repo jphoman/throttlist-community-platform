@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
 import {
   View,
   Text,
@@ -9,15 +9,17 @@ import {
   ScrollView,
   Linking,
 } from 'react-native'
-import { Heart, MessageCircle, Share2, ExternalLink, X, ProBadge } from '@/components/Icons'
+import { Heart, MessageCircle, Share2, ExternalLink, X, ProBadge, Tag } from '@/components/Icons'
 import { colors, timeAgo, formatFollowers } from '@/constants/throttlist'
-import { isProUser } from '@/lib/data'
+import { isProUser, getPostComments } from '@/lib/data'
+import type { Comment } from '@/types'
 import InitialsAvatar from '@/components/InitialsAvatar'
 import CommentSheet from '@/components/CommentSheet'
 import type { Post, Part } from '@/types'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PHOTO_HEIGHT = Math.round(SCREEN_WIDTH * (4 / 3))
+const CAPTION_LINE_LIMIT = 3
 
 interface PostCardProps {
   post: Post
@@ -44,6 +46,22 @@ export default function PostCard({
   const [photoIndex, setPhotoIndex] = useState(0)
   const [tagsOpen, setTagsOpen] = useState(false)
   const [commentSheetOpen, setCommentSheetOpen] = useState(false)
+  const [captionExpanded, setCaptionExpanded] = useState(false)
+  const [captionTruncated, setCaptionTruncated] = useState(false)
+
+  // Ref on the clamped Text element — used on web to detect overflow via scrollHeight
+  const captionRef = useRef<any>(null)
+
+  useEffect(() => {
+    if (captionExpanded) return
+    const node = captionRef.current
+    if (!node) return
+    // On RN Web the ref is a DOM element: scrollHeight reflects unclamped content
+    // height even when -webkit-line-clamp clips it visually.
+    if (typeof node.scrollHeight === 'number') {
+      setCaptionTruncated(node.scrollHeight > node.clientHeight + 1)
+    }
+  }, [post.caption, captionExpanded])
 
   const photos: string[] = (() => {
     try { return JSON.parse(post.photos) } catch { return [] }
@@ -51,17 +69,33 @@ export default function PostCard({
   const taggedIds: string[] = (() => {
     try { return JSON.parse(post.taggedPartIds) } catch { return [] }
   })()
-
   const taggedParts = parts.filter(p => taggedIds.includes(p.id))
+
+  // Priority: (1) post creator's top-liked comment, (2) most-liked others, (3) most recent
+  const previewComments: Comment[] = useMemo(() => {
+    const all = getPostComments(post.id)
+    const byLikes = (a: Comment, b: Comment) =>
+      b.likes - a.likes || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    const creator = all.filter(c => c.authorUserId === post.userId).sort(byLikes)
+    const others  = all.filter(c => c.authorUserId !== post.userId).sort(byLikes)
+    const result: Comment[] = []
+    if (creator.length > 0) result.push(creator[0])
+    result.push(...others.slice(0, 2 - result.length))
+    return result
+  }, [post.id, post.userId])
 
   function handleLike() {
     setLiked(!liked)
     onLike?.()
   }
 
+  function openComments() {
+    setCommentSheetOpen(true)
+    onComment?.()
+  }
+
   return (
     <View style={styles.card}>
-      {/* Full-bleed photo with overlaid header and actions */}
       {photos.length > 0 ? (
         <View style={styles.photoWrap}>
           <ScrollView
@@ -75,19 +109,13 @@ export default function PostCard({
           >
             {photos.map((uri, i) => (
               <Pressable key={i} onPress={onBuildPress}>
-                <Image
-                  source={{ uri }}
-                  style={styles.photo}
-                  resizeMode="cover"
-                />
+                <Image source={{ uri }} style={styles.photo} resizeMode="cover" />
               </Pressable>
             ))}
           </ScrollView>
 
-          {/* Gradient-like dark scrim at top for readability */}
           <View style={styles.topScrim} pointerEvents="none" />
 
-          {/* Username + avatar overlaid top-left */}
           <Pressable style={styles.overlayHeader} onPress={onBuildPress}>
             <InitialsAvatar
               name={post.displayName || post.username || post.buildMake}
@@ -105,14 +133,13 @@ export default function PostCard({
             </View>
           </Pressable>
 
-          {/* Tags badge top-right — tappable */}
           {taggedParts.length > 0 && (
             <Pressable style={styles.partsBadge} onPress={() => setTagsOpen(o => !o)}>
-              <Text style={styles.partsBadgeText}>{taggedParts.length} tags</Text>
+              <Tag size={11} color="#fff" />
+              <Text style={styles.partsBadgeText}>{taggedParts.length}</Text>
             </Pressable>
           )}
 
-          {/* Dot indicators */}
           {photos.length > 1 && (
             <View style={styles.dotRow} pointerEvents="none">
               {photos.map((_, i) => (
@@ -121,7 +148,6 @@ export default function PostCard({
             </View>
           )}
 
-          {/* Action buttons overlaid bottom-right */}
           <View style={styles.overlayActions}>
             <Pressable style={styles.overlayActionBtn} onPress={handleLike}>
               <Heart
@@ -133,7 +159,7 @@ export default function PostCard({
                 {formatFollowers(post.likeCount + (liked ? 1 : 0))}
               </Text>
             </Pressable>
-            <Pressable style={styles.overlayActionBtn} onPress={() => { setCommentSheetOpen(true); onComment?.() }}>
+            <Pressable style={styles.overlayActionBtn} onPress={openComments}>
               <MessageCircle size={22} color="#FFFFFF" />
               <Text style={styles.overlayActionCount}>{formatFollowers(post.commentCount)}</Text>
             </Pressable>
@@ -142,12 +168,10 @@ export default function PostCard({
             </Pressable>
           </View>
 
-          {/* Timestamp bottom-left */}
           <Text style={styles.overlayTimestamp} pointerEvents="none">
             {timeAgo(post.createdAt)}
           </Text>
 
-          {/* Tags overlay panel — appears over the image when badge is tapped */}
           {tagsOpen && taggedParts.length > 0 && (
             <Pressable style={styles.tagsOverlay} onPress={() => setTagsOpen(false)}>
               <Pressable onPress={e => e.stopPropagation()}>
@@ -184,9 +208,7 @@ export default function PostCard({
                         >
                           {part.name}
                         </Text>
-                        {part.category ? (
-                          <Text style={styles.tagCategory}>{part.category}</Text>
-                        ) : null}
+                        {part.category && <Text style={styles.tagCategory}>{part.category}</Text>}
                       </View>
                       {part.type === 'linkable' && part.sourceUrl && (
                         <ExternalLink size={13} color={colors.accent} />
@@ -199,7 +221,6 @@ export default function PostCard({
           )}
         </View>
       ) : (
-        /* No photo: plain header row */
         <Pressable style={styles.header} onPress={onBuildPress}>
           <InitialsAvatar
             name={post.displayName || post.username || post.buildMake}
@@ -222,11 +243,47 @@ export default function PostCard({
       {/* Caption */}
       {!!post.caption && (
         <View style={styles.captionWrap}>
-          <Text style={styles.caption}>{post.caption}</Text>
+          <Text
+            ref={captionRef}
+            style={styles.caption}
+            numberOfLines={captionExpanded ? undefined : CAPTION_LINE_LIMIT}
+            // Native fallback: onTextLayout fires with unclamped lines on the
+            // hidden measuring pass; on web this event may not reflect overflow.
+            onTextLayout={e => {
+              if (e.nativeEvent.lines.length > CAPTION_LINE_LIMIT) {
+                setCaptionTruncated(true)
+              }
+            }}
+          >
+            <Text style={styles.captionUsername}>{post.username} </Text>
+            {post.caption}
+          </Text>
+
+          {captionTruncated && !captionExpanded && (
+            <Pressable onPress={() => setCaptionExpanded(true)}>
+              <Text style={styles.moreText}>more</Text>
+            </Pressable>
+          )}
         </View>
       )}
 
-      {/* Bottom spacer */}
+      {/* Comment preview + "View all" */}
+      {(previewComments.length > 0 || post.commentCount > 0) && (
+        <Pressable style={styles.commentsSection} onPress={openComments}>
+          {previewComments.map(c => (
+            <Text key={c.id} style={styles.commentLine} numberOfLines={1}>
+              <Text style={styles.commentUsername}>{c.username} </Text>
+              <Text style={styles.commentBody}>{c.body}</Text>
+            </Text>
+          ))}
+          {post.commentCount > 0 && (
+            <Text style={styles.viewAllText}>
+              View all {post.commentCount} comments
+            </Text>
+          )}
+        </Pressable>
+      )}
+
       <View style={styles.cardBottom} />
 
       <CommentSheet
@@ -319,8 +376,11 @@ const styles = StyleSheet.create({
     right: 12,
     backgroundColor: colors.accent,
     borderRadius: 10,
-    paddingHorizontal: 8,
+    paddingHorizontal: 7,
     paddingVertical: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   partsBadgeText: {
     color: '#fff',
@@ -345,7 +405,6 @@ const styles = StyleSheet.create({
   dotActive: {
     backgroundColor: '#FFFFFF',
   },
-  // Tags overlay
   tagsOverlay: {
     position: 'absolute',
     top: 0,
@@ -407,7 +466,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 1,
   },
-  // No-photo fallback
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -439,12 +497,44 @@ const styles = StyleSheet.create({
   },
   captionWrap: {
     paddingHorizontal: 14,
-    paddingTop: 11,
+    paddingTop: 10,
+  },
+  captionUsername: {
+    color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
   },
   caption: {
     color: colors.textPrimary,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  moreText: {
+    color: colors.textTertiary,
+    fontSize: 13,
+    marginTop: 2,
+  },
+  commentsSection: {
+    paddingHorizontal: 14,
+    paddingTop: 6,
+    gap: 3,
+  },
+  commentLine: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  commentUsername: {
+    color: colors.textPrimary,
+    fontWeight: '700',
+  },
+  commentBody: {
+    color: colors.textSecondary,
+  },
+  viewAllText: {
+    color: colors.textTertiary,
+    fontSize: 13,
+    marginTop: 2,
   },
   cardBottom: {
     height: 10,
