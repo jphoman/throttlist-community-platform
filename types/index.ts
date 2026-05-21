@@ -26,6 +26,7 @@ export interface Build {
   tagVisibility: string // JSON object string
   status: string
   archivedPublic: string | number
+  buildType: string
   createdAt: string
   // joined
   username?: string
@@ -67,6 +68,7 @@ export interface Post {
   buildMake?: string
   buildModel?: string
   buildCoverPhotoUrl?: string
+  buildType?: string
 }
 
 export interface Comment {

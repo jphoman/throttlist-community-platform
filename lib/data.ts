@@ -149,6 +149,7 @@ export const MOCK_BUILDS: Build[] = [
     tagVisibility: JSON.stringify({}),
     status: 'active',
     archivedPublic: '0',
+    buildType: 'moto',
     createdAt: new Date('2024-01-15').toISOString(),
   },
   // Cappuccino Moto — 2015 Ducati Scrambler
@@ -166,6 +167,7 @@ export const MOCK_BUILDS: Build[] = [
     tagVisibility: JSON.stringify({}),
     status: 'active',
     archivedPublic: '0',
+    buildType: 'moto',
     createdAt: new Date('2024-06-01').toISOString(),
   },
   // investomoto — 2020 BMW R nineT
@@ -183,6 +185,7 @@ export const MOCK_BUILDS: Build[] = [
     tagVisibility: JSON.stringify({}),
     status: 'active',
     archivedPublic: '0',
+    buildType: 'moto',
     createdAt: new Date('2024-02-01').toISOString(),
   },
   // moto_feelz — 1977 Honda CB750
@@ -200,6 +203,7 @@ export const MOCK_BUILDS: Build[] = [
     tagVisibility: JSON.stringify({}),
     status: 'active',
     archivedPublic: '0',
+    buildType: 'moto',
     createdAt: new Date('2024-02-10').toISOString(),
   },
   // retroscrambler_ — 2019 Triumph Street Scrambler
@@ -217,6 +221,7 @@ export const MOCK_BUILDS: Build[] = [
     tagVisibility: JSON.stringify({}),
     status: 'active',
     archivedPublic: '0',
+    buildType: 'moto',
     createdAt: new Date('2024-03-01').toISOString(),
   },
   // seven11moto — 2022 Yamaha XSR900 60th Anniversary
@@ -234,6 +239,7 @@ export const MOCK_BUILDS: Build[] = [
     tagVisibility: JSON.stringify({}),
     status: 'active',
     archivedPublic: '0',
+    buildType: 'moto',
     createdAt: new Date('2024-03-15').toISOString(),
   },
   // coldbrewmoto — 2023 Indian FTR Carbon R
@@ -251,6 +257,7 @@ export const MOCK_BUILDS: Build[] = [
     tagVisibility: JSON.stringify({}),
     status: 'active',
     archivedPublic: '0',
+    buildType: 'moto',
     createdAt: new Date('2024-04-10').toISOString(),
   },
   // thecrocodile — 2021 Ducati Scrambler 1100
@@ -268,6 +275,7 @@ export const MOCK_BUILDS: Build[] = [
     tagVisibility: JSON.stringify({}),
     status: 'active',
     archivedPublic: '0',
+    buildType: 'moto',
     createdAt: new Date('2024-03-20').toISOString(),
   },
   // motozuc — 2020 Triumph Bonneville T120
@@ -285,6 +293,7 @@ export const MOCK_BUILDS: Build[] = [
     tagVisibility: JSON.stringify({}),
     status: 'active',
     archivedPublic: '0',
+    buildType: 'moto',
     createdAt: new Date('2024-04-01').toISOString(),
   },
 ]
@@ -555,6 +564,7 @@ function _joinPosts(raw: typeof _RAW_POSTS): Post[] {
       buildMake: build?.make,
       buildModel: build?.model,
       buildCoverPhotoUrl: build?.coverPhotoUrl,
+      buildType: build?.buildType,
     }
   })
 }

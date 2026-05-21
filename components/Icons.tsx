@@ -71,6 +71,10 @@ export function ChevronRight({ size = 24, color = '#000' }: IconProps) {
   return <Feather name="chevron-right" size={size} color={color} />
 }
 
+export function ChevronDown({ size = 24, color = '#000' }: IconProps) {
+  return <Feather name="chevron-down" size={size} color={color} />
+}
+
 export function Star({ size = 24, color = '#000', fill }: IconProps) {
   if (fill && fill !== 'none') {
     return <Ionicons name="star" size={size} color={fill} />
