@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react'
+import React, { useState, useMemo } from 'react'
 import {
   View,
   Text,
@@ -20,7 +20,6 @@ import type { Post, Part } from '@/types'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PHOTO_HEIGHT = Math.round(SCREEN_WIDTH * (4 / 3))
-const CAPTION_LINE_LIMIT = 3
 
 interface PostCardProps {
   post: Post
@@ -47,22 +46,6 @@ export default function PostCard({
   const [photoIndex, setPhotoIndex] = useState(0)
   const [tagsOpen, setTagsOpen] = useState(false)
   const [commentSheetOpen, setCommentSheetOpen] = useState(false)
-  const [captionExpanded, setCaptionExpanded] = useState(false)
-  const [captionTruncated, setCaptionTruncated] = useState(false)
-
-  // Ref on the clamped Text element — used on web to detect overflow via scrollHeight
-  const captionRef = useRef<any>(null)
-
-  useEffect(() => {
-    if (captionExpanded) return
-    const node = captionRef.current
-    if (!node) return
-    // On RN Web the ref is a DOM element: scrollHeight reflects unclamped content
-    // height even when -webkit-line-clamp clips it visually.
-    if (typeof node.scrollHeight === 'number') {
-      setCaptionTruncated(node.scrollHeight > node.clientHeight + 1)
-    }
-  }, [post.caption, captionExpanded])
 
   const photos: string[] = (() => {
     try { return JSON.parse(post.photos) } catch { return [] }
@@ -249,51 +232,33 @@ export default function PostCard({
         </Pressable>
       )}
 
-      {/* Caption */}
-      {!!post.caption && (
-        <View style={styles.captionWrap}>
-          <Text
-            ref={captionRef}
-            style={styles.caption}
-            numberOfLines={captionExpanded ? undefined : CAPTION_LINE_LIMIT}
-            // Native fallback: onTextLayout fires with unclamped lines on the
-            // hidden measuring pass; on web this event may not reflect overflow.
-            onTextLayout={e => {
-              if (e.nativeEvent.lines.length > CAPTION_LINE_LIMIT) {
-                setCaptionTruncated(true)
-              }
-            }}
-          >
-            <Text style={styles.captionUsername}>{post.username} </Text>
+      {/* Caption + comments + timestamp */}
+      <View style={styles.postMeta}>
+        {!!post.caption && (
+          <Text style={styles.captionLine}>
+            <Text style={styles.metaUsername}>{post.username} </Text>
             {post.caption}
           </Text>
+        )}
 
-          {captionTruncated && !captionExpanded && (
-            <Pressable onPress={() => setCaptionExpanded(true)}>
-              <Text style={styles.moreText}>more</Text>
-            </Pressable>
-          )}
-        </View>
-      )}
-
-      {/* Comment preview + "View all" */}
-      {(previewComments.length > 0 || post.commentCount > 0) && (
-        <Pressable style={styles.commentsSection} onPress={openComments}>
-          {previewComments.map(c => (
-            <Text key={c.id} style={styles.commentLine} numberOfLines={1}>
-              <Text style={styles.commentUsername}>{c.username} </Text>
-              <Text style={styles.commentBody}>{c.body}</Text>
+        {previewComments.map(c => (
+          <View key={c.id} style={styles.commentRow}>
+            <Text style={styles.commentText}>
+              <Text style={styles.metaUsername}>{c.username} </Text>
+              {c.body}
             </Text>
-          ))}
-          {post.commentCount > 0 && (
-            <Text style={styles.viewAllText}>
-              View all {post.commentCount} comments
-            </Text>
-          )}
-        </Pressable>
-      )}
+            <Heart size={16} color={colors.textTertiary} />
+          </View>
+        ))}
 
-      <View style={styles.cardBottom} />
+        {post.commentCount > 0 && (
+          <Pressable onPress={openComments}>
+            <Text style={styles.viewAllText}>View all {post.commentCount} comments</Text>
+          </Pressable>
+        )}
+
+        <Text style={styles.metaTimestamp}>{timeAgo(post.createdAt)}</Text>
+      </View>
 
       <CommentSheet
         visible={commentSheetOpen}
@@ -510,48 +475,40 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 12,
   },
-  captionWrap: {
+  postMeta: {
     paddingHorizontal: 14,
     paddingTop: 10,
+    paddingBottom: 10,
   },
-  captionUsername: {
+  captionLine: {
+    fontSize: 13,
+    lineHeight: 19,
     color: colors.textPrimary,
-    fontSize: 13,
-    fontWeight: '700',
-    lineHeight: 18,
   },
-  caption: {
+  metaUsername: {
+    fontWeight: '600',
+    fontSize: 13,
     color: colors.textPrimary,
+  },
+  commentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  commentText: {
+    flex: 1,
     fontSize: 13,
-    lineHeight: 18,
-  },
-  moreText: {
-    color: colors.textTertiary,
-    fontSize: 13,
-    marginTop: 2,
-  },
-  commentsSection: {
-    paddingHorizontal: 14,
-    paddingTop: 6,
-    gap: 3,
-  },
-  commentLine: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  commentUsername: {
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  commentBody: {
+    lineHeight: 19,
     color: colors.textSecondary,
+    fontWeight: '400',
   },
   viewAllText: {
     color: colors.textTertiary,
     fontSize: 13,
-    marginTop: 2,
+    marginTop: 4,
   },
-  cardBottom: {
-    height: 10,
+  metaTimestamp: {
+    fontSize: 12,
+    color: colors.textTertiary,
+    marginTop: 4,
   },
 })
