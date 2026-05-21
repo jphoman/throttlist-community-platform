@@ -138,7 +138,7 @@ export default function PostCard({
             <Pressable style={styles.partsBadge} onPress={() => setTagsOpen(o => !o)}>
               <Svg width={48} height={20} viewBox="0 0 48 20">
                 <SvgPath
-                  d="M 14 0 L 44 0 Q 48 0 48 4 L 48 16 Q 48 20 44 20 L 14 20 Q 10 20 7.2 17.2 L 2.1 12.1 A 3 3 0 0 0 2.1 7.9 L 7.2 2.8 Q 10 0 14 0 Z M 13 10 m -2.5 0 a 2.5 2.5 0 1 0 5 0 a 2.5 2.5 0 1 0 -5 0"
+                  d="M 14 0 L 44 0 Q 48 0 48 4 L 48 16 Q 48 20 44 20 L 14 20 C 4 20 1 14 1 10 C 1 6 4 0 14 0 Z M 13 10 m -2.5 0 a 2.5 2.5 0 1 0 5 0 a 2.5 2.5 0 1 0 -5 0"
                   fill={colors.accent}
                   fillRule="evenodd"
                 />
